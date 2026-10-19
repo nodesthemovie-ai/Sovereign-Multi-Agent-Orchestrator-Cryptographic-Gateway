@@ -1,0 +1,13 @@
+--- a/pkg/routes/routes.go
++++ b/pkg/routes/routes.go
+@@ -94,7 +94,11 @@ func NewEcho() *echo.Echo {
+-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+-		AllowOrigins:     []string{"*"},
+-		AllowCredentials: true,
+-	}))
++	allowedOrigins := config.GetStringSlice("service.corsorigins")
++	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
++		AllowOrigins:     allowedOrigins,
++		AllowCredentials: false,
++		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
++	}))

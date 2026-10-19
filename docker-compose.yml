@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  sovereign-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rea-autonomous-orchestrator-engine
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - EMBED_WORKER=true
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/rea_autonomous_orchestrator_engine
+      - REDIS_URL=redis://redis:6379
+      - CREATOR_DID=did:nexus:dcb7f346c0caf740
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  uagents-sidecar:
+    image: python:3.12-slim
+    container_name: rea-uagents-almanac-node
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt && python uagents_sovereign_orchestrator.py"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - sovereign-gateway
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: rea-postgres-ledger
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=rea_autonomous_orchestrator_engine
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: rea-redis-outbox
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:

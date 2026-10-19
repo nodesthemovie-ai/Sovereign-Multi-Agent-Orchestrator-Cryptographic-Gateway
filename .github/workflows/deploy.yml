@@ -1,0 +1,71 @@
+name: Sovereign SLSA L3 Build, 10-Pillar Verification & Cloud Run Deploy
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build-verify-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies & Execute 10-Pillar Consensus Test Suite
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Verify GHSA-vx5x-727q-9979 Remediation Patch PoC
+        run: |
+          chmod +x verification.poc.sh
+          ./verification.poc.sh
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation (Keyless OIDC)
+        if: github.ref == 'refs/heads/main' && env.GCP_WORKLOAD_IDENTITY_PROVIDER != ''
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Build & Push Distroless Container Image
+        if: github.ref == 'refs/heads/main' && env.GCP_PROJECT_ID != ''
+        id: push_image
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          IMAGE_URI="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/sovereign-fleet/rea-autonomous-orchestrator-engine"
+          docker build -t "${IMAGE_URI}:${{ github.sha }}" .
+          docker push "${IMAGE_URI}:${{ github.sha }}"
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_URI}:${{ github.sha }}" | cut -d'@' -f2)
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SLSA v1.0 Build Provenance Attestation
+        if: github.ref == 'refs/heads/main' && steps.push_image.outputs.digest != ''
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/sovereign-fleet/rea-autonomous-orchestrator-engine
+          subject-digest: ${{ steps.push_image.outputs.digest }}
+
+      - name: Deploy to Cloud Run
+        if: github.ref == 'refs/heads/main' && steps.push_image.outputs.digest != ''
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: rea-autonomous-orchestrator-engine
+          region: us-central1
+          image: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/sovereign-fleet/rea-autonomous-orchestrator-engine@${{ steps.push_image.outputs.digest }}

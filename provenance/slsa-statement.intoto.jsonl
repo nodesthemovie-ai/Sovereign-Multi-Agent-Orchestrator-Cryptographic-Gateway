@@ -1,0 +1,35 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "pkg:npm/rea-autonomous-orchestrator-engine@7.0.0-omni-apex",
+      "digest": {
+        "sha256": "921a3384f50e6c68be467f24417a73e0b22638349f385e28943626bcc1c4e9b0"
+      }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://autocorp.nexus/GenesisStudioCompiler/v7-omni-apex",
+      "externalParameters": {
+        "serviceSlug": "rea-autonomous-orchestrator-engine",
+        "version": "7.0.0-omni-apex",
+        "strategy": "saas",
+        "compliance": "SOC2",
+        "rateLimitRpm": 6000,
+        "verifiedPillars": 10
+      }
+    },
+    "runDetails": {
+      "builder": {
+        "id": "did:nexus:dcb7f346c0caf740",
+        "publicKey": "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEK6TgdAXfOpZICOx8ykq03JPkYFEITC8EzqREgHip1K5umawd/9DPqita/q6r4Huo4JX1PhiAlHTg1guRey80N564ClSi6Qmu0EvG6XVAFx4XHi1ZUXd0kw2uXhg5JH0Z"
+      },
+      "metadata": {
+        "invocationId": "inv-1792372950629",
+        "startedOn": "2026-10-19T01:22:30.629Z"
+      }
+    }
+  }
+}

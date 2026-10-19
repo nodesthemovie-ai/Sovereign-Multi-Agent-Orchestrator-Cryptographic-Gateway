@@ -1,0 +1,6 @@
+{
+  "name": "Sovereign Multi-Agent Orchestrator & Cryptographic Gateway",
+  "description": "Enterprise multi-agent orchestration gateway featuring Fetch.ai uAgents protocols (TaskDispatch, TelemetryIngest, ConsensusVerification), exponential-backoff telemetry sync, parallel swarm fan-out with Merkle digest verification, Almanac/DeltaV routing, and Gemini-powered voice, visual diagram synthesis, and multi-model reasoning.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
